@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片转换为 SVG</title>
+    <style>
+        /* 全局样式 */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #007acc;
+        }
+
+        /* 容器样式 */
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+            margin-bottom: 20px;
+        }
+
+        /* 文件输入框样式 */
+        input[type="file"] {
+            margin: 20px 0;
+            padding: 10px;
+            border: 2px dashed #007acc;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        input[type="file"]:hover {
+            background-color: #f0f8ff;
+        }
+
+        /* 下载链接按钮 */
+        .download-btn {
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .download-btn:hover {
+            background-color: #005f99;
+        }
+
+        /* 图标展示容器样式 */
+        #icon-container {
+            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+            min-height: 150px;
+            max-height: 150px;
+        }
+
+        #icon-container svg {
+            width: 80px;
+            height: 80px;
+        }
+
+        /* SVG代码展示容器样式 */
+        #svg-code-container {
+            margin-top: 20px;
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            text-align: left;
+            position: relative;
+            border: 1px solid #ccc;
+            display: none;
+        }
+
+        /* 代码复制按钮 */
+        .copy-btn {
+            background-color: #007acc;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            position: absolute;
+            right: 10px;
+            top: 10px;
+        }
+
+        .copy-btn:hover {
+            background-color: #005f99;
+        }
+
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 0;
+        }
+        
+        .footer {
+            margin-top: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .back-link {
+            color: #3498db;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+        
+        .back-link:hover {
+            color: #2980b9;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>图片转换为 SVG</h2>
+        <p>请选择一个图片文件：</p>
+        <input type="file" id="icon-file" accept=".ico,.png,.jpeg,.jpg,.webp" onchange="handleFileSelect(event)">
+
+        <div id="icon-container">
+            <!-- SVG内容将在这里显示 -->
+            <p>请先上传一个图片文件</p>
+        </div>
+
+        <div id="svg-code-container">
+            <pre id="svg-code"></pre>
+            <button class="copy-btn" onclick="copyToClipboard()">复制代码</button>
+        </div>
+
+        <a id="download-btn" class="download-btn" href="#">下载 SVG 文件</a>
+    </div>
+
+    <script>
+        let svgContent = ''; // 用于存储生成的SVG内容
+
+        // 加载文件并转换为SVG
+        function convertImageToSVG(imageFile) {
+            var img = new Image();
+            img.onload = function() {
+                var canvas = document.createElement('canvas');
+                var ctx = canvas.getContext('2d');
+
+                // 获取图片的尺寸
+                var width = img.width;
+                var height = img.height;
+
+                // 设定canvas尺寸
+                canvas.width = width;
+                canvas.height = height;
+
+                // 在Canvas上绘制图像
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // 获取Canvas上的图像数据
+                var imageData = canvas.toDataURL('image/png');
+
+                // 创建一个SVG图像元素
+                svgContent = '<svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 24 24">';
+                svgContent += '<image href="' + imageData + '" width="24" height="24"/>';
+                svgContent += '</svg>';
+
+                // 将SVG内容插入到DOM中显示
+                document.getElementById('icon-container').innerHTML = svgContent;
+
+                // 显示SVG代码
+                document.getElementById('svg-code').textContent = svgContent.trim(); // 使用 trim() 去除多余的换行符
+
+                // 显示下载按钮和代码容器
+                document.getElementById('download-btn').style.display = 'inline-block';
+                document.getElementById('svg-code-container').style.display = 'block';
+
+                // 设置下载链接
+                document.getElementById('download-btn').href = createSVGBlobURL(svgContent);
+                document.getElementById('download-btn').download = 'image.svg';
+            };
+
+            img.onerror = function() {
+                alert('无法加载图像。请检查文件格式和完整性。');
+            };
+
+            // 加载文件
+            img.src = URL.createObjectURL(imageFile);
+        }
+
+        // 处理选择的文件
+        function handleFileSelect(event) {
+            var selectedFile = event.target.files[0];
+            if (selectedFile) {
+                convertImageToSVG(selectedFile);
+            }
+        }
+
+        // 创建一个blob URL以便用户下载SVG文件
+        function createSVGBlobURL(svgContent) {
+            var blob = new Blob([svgContent], { type: 'image/svg+xml' });
+            return URL.createObjectURL(blob);
+        }
+
+        // 复制SVG代码到剪贴板
+        function copyToClipboard() {
+            const svgCodeElement = document.getElementById('svg-code');
+            const range = document.createRange();
+            range.selectNode(svgCodeElement);
+            window.getSelection().removeAllRanges(); // 清除之前的选择
+            window.getSelection().addRange(range);   // 选择当前文本
+            document.execCommand('copy');            // 执行复制命令
+            window.getSelection().removeAllRanges(); // 清除选择
+
+            // 提示用户已复制
+            alert('SVG 代码已复制到剪贴板');
+        }
+    </script>
+
+</body>
+</html>

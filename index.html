@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图像工具箱 - 专业图片处理工具集</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%234285f4'%3E%3Cpath d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/%3E%3C/svg%3E">
+    <style>
+        :root {
+            --primary-color: #4285f4;
+            --secondary-color: #34a853;
+            --accent-color: #ea4335;
+            --background-color: #f8f9fa;
+            --card-color: #ffffff;
+            --text-color: #202124;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --border-color: #e0e0e0;
+            --tab-hover-color: #eef3ff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-color), #5b9aff);
+            color: white;
+            padding: 1rem 1rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .particles-js {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.3rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+
+        header p {
+            font-size: 0.9rem;
+            max-width: 700px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1370px;
+            margin: 1rem auto;
+            padding: 0 1rem;
+        }
+
+        .tools-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            overflow: hidden;
+        }
+
+        /* 标签栏样式 */
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid var(--border-color);
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .tab {
+            padding: 1rem 1.5rem;
+            color: var(--text-color);
+            cursor: pointer;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tab:hover {
+            background-color: var(--tab-hover-color);
+        }
+
+        .tab.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            background-color: white;
+        }
+
+        .tab-icon {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* 标签内容区域 */
+        .tab-content {
+            display: none;
+            padding: 2rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 工具说明样式 */
+        .tool-description {
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tool-description h2 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .tool-description p {
+            color: #666;
+            line-height: 1.5;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                margin: 1rem auto;
+            }
+
+            .tab {
+                padding: 0.8rem 1.2rem;
+            }
+
+            .tab-content {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .tab {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .tab-content {
+                padding: 1rem;
+            }
+        }
+
+        /* 工具内容框架 */
+        .tool-frame {
+            width: 100%;
+            height: 800px;
+            border: none;
+            border-radius: 4px;
+            background: white;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>图像工具箱</h1>
+            <p>专业的在线图片处理平台，提供批量处理、裁剪、滤镜、水印等多种图像处理功能</p>
+        </div>
+        <div id="particles-js" class="particles-js"></div>
+    </header>
+
+    <div class="container">
+        <div class="tools-container">
+            <div class="tabs">
+                <div class="tab active" data-tool="BatchImageProcessor">
+                    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    批量图像处理
+                </div>
+                <div class="tab" data-tool="ImageCrop">
+                    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M6 2h15v15M7 17v-11M17 7H7"/>
+                        <path d="M7 17h11v11H7z"/>
+                    </svg>
+                    图像裁剪
+                </div>
+                <div class="tab" data-tool="ImageFilters">
+                    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                    </svg>
+                    图像滤镜
+                </div>
+                <div class="tab" data-tool="ImageWatermark">
+                    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 19l7-7 3 3-7 7-3 3M18 7l-1.4-1.4a1 1 0 00-1.4 0L15 6"/>
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    </svg>
+                    水印添加
+                </div>
+                <div class="tab" data-tool="QRCodeGenerator">
+                    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <rect x="8" y="8" width="8" height="8"/>
+                        <line x1="3" y1="8" x2="8" y2="8"/>
+                        <line x1="8" y1="3" x2="8" y2="8"/>
+                        <line x1="16" y1="8" x2="21" y2="8"/>
+                        <line x1="16" y1="3" x2="16" y2="8"/>
+                    </svg>
+                    二维码生成
+                </div>
+                <div class="tab" data-tool="Pic2SVG">
+                    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15c0 1.1-.9 2-2 2H5c-1.1 0-2-.9-2-2v-3c0-1.1.9-2 2-2h4l2 3h6c1.1 0 2-.9 2-2V6c0-1.1.9-2 2-2s2 .9 2 2v11z"/>
+                    </svg>
+                    图片转SVG
+                </div>
+                <div class="tab" data-tool="ImageStitch">
+                    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                    </svg>
+                    图像拼接
+                </div>
+                <div class="tab" data-tool="ImageMetadata">
+                    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <line x1="7" y1="7" x2="17" y2="7"/>
+                        <line x1="7" y1="12" x2="17" y2="12"/>
+                        <line x1="7" y1="17" x2="13" y2="17"/>
+                    </svg>
+                    元数据查看
+                </div>
+                <div class="tab" data-tool="ImageAnimation">
+                    <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <path d="M12 8v8M8 12h8"/>
+                    </svg>
+                    动画制作
+                </div>
+            </div>
+
+            <div id="tool-content" class="tab-content active">
+                <div class="tool-description">
+                    <h2>批量图像处理</h2>
+                    <p>一次性处理多张图片，支持调整大小、格式转换、压缩等功能，提高工作效率。</p>
+                </div>
+                <iframe id="tool-frame" class="tool-frame" src="BatchImageProcessor.html"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化 particles.js
+            particlesJS("particles-js", {
+                particles: {
+                    number: { value: 50, density: { enable: true, value_area: 800 } },
+                    color: { value: "#ffffff" },
+                    shape: { type: "circle" },
+                    opacity: {
+                        value: 0.5,
+                        random: false,
+                        anim: { enable: false }
+                    },
+                    size: {
+                        value: 3,
+                        random: true,
+                        anim: { enable: false }
+                    },
+                    line_linked: {
+                        enable: true,
+                        distance: 150,
+                        color: "#4285f4",
+                        opacity: 0.4,
+                        width: 1
+                    },
+                    move: {
+                        enable: true,
+                        speed: 2,
+                        direction: "none",
+                        random: false,
+                        straight: false,
+                        out_mode: "out",
+                        bounce: false
+                    }
+                },
+                interactivity: {
+                    detect_on: "canvas",
+                    events: {
+                        onhover: { enable: true, mode: "grab" },
+                        onclick: { enable: true, mode: "push" },
+                        resize: true
+                    }
+                },
+                retina_detect: true
+            });
+
+            // 标签切换功能
+            const tabs = document.querySelectorAll('.tab');
+            const toolFrame = document.getElementById('tool-frame');
+            const toolDescription = document.querySelector('.tool-description');
+
+            // 工具描述映射
+            const toolDescriptions = {
+                BatchImageProcessor: {
+                    title: '批量图像处理',
+                    description: '一次性处理多张图片，支持调整大小、格式转换、压缩等功能，提高工作效率。'
+                },
+                ImageCrop: {
+                    title: '图像裁剪',
+                    description: '精确裁剪和调整图像尺寸，支持旋转、翻转等基本编辑功能。'
+                },
+                ImageFilters: {
+                    title: '图像滤镜',
+                    description: '为图片添加专业的滤镜效果，包括灰度、复古、模糊、锐化等多种效果。'
+                },
+                ImageWatermark: {
+                    title: '水印添加',
+                    description: '为图片添加文字或图像水印，保护图片版权。'
+                },
+                QRCodeGenerator: {
+                    title: '二维码生成',
+                    description: '生成自定义的二维码，支持不同尺寸和样式。'
+                },
+                Pic2SVG: {
+                    title: '图片转SVG',
+                    description: '将位图转换为可缩放的矢量图形，适用于图标和插图。'
+                },
+                ImageStitch: {
+                    title: '图像拼接',
+                    description: '将多张图片拼接成全景图或长图，支持横向和纵向拼接。'
+                },
+                ImageMetadata: {
+                    title: '元数据查看',
+                    description: '查看图片的EXIF信息，包括拍摄参数、设备信息等详细数据。'
+                },
+                ImageAnimation: {
+                    title: '动画制作',
+                    description: '将多张图片制作成GIF动画，支持调整帧率和过渡效果。'
+                }
+            };
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // 移除所有标签的活动状态
+                    tabs.forEach(t => t.classList.remove('active'));
+                    
+                    // 添加当前标签的活动状态
+                    tab.classList.add('active');
+
+                    // 获取工具标识
+                    const tool = tab.getAttribute('data-tool');
+
+                    // 更新工具描述
+                    const description = toolDescriptions[tool];
+                    if (description) {
+                        toolDescription.innerHTML = `
+                            <h2>${description.title}</h2>
+                            <p>${description.description}</p>
+                        `;
+                    }
+
+                    // 更新 iframe 源
+                    toolFrame.src = `${tool}.html`;
+
+                    // 添加过渡动画
+                    toolFrame.style.opacity = '0';
+                    setTimeout(() => {
+                        toolFrame.style.opacity = '1';
+                    }, 100);
+                });
+            });
+
+            // iframe 高度自适应
+            toolFrame.addEventListener('load', function() {
+                try {
+                    const height = toolFrame.contentWindow.document.body.scrollHeight;
+                    toolFrame.style.height = `${height}px`;
+                } catch (e) {
+                    console.log('无法调整iframe高度:', e);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

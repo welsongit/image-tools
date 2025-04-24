@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二维码生成器 - 图像工具箱</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f7f9fc;
+            color: #333;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #4285f4;
+            margin-bottom: 10px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .settings-panel {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        input[type="text"], textarea, input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+        
+        .color-preview {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+        
+        .qrcode-panel {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .qrcode-container {
+            width: 100%;
+            max-width: 300px;
+            height: 300px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 8px;
+        }
+        
+        #qrcode {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .btn {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            display: inline-block;
+        }
+        
+        .btn:hover {
+            background-color: #3367d6;
+        }
+        
+        .action-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .type-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .type-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            background-color: #f5f5f5;
+            margin-right: 5px;
+            font-weight: 500;
+        }
+        
+        .type-tab.active {
+            background-color: white;
+            border-color: #ddd;
+            position: relative;
+        }
+        
+        .type-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background-color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .checkbox-group {
+            margin-top: 10px;
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            margin-bottom: 8px;
+        }
+        
+        .checkbox-label input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        
+        .logo-upload {
+            margin-top: 10px;
+            display: none;
+        }
+        
+        #logoPreview {
+            max-width: 100px;
+            max-height: 100px;
+            margin-top: 10px;
+            display: none;
+            border: 1px solid #ddd;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #4285f4;
+            text-decoration: none;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="type-tabs">
+            <div class="type-tab active" data-tab="qrcode">二维码</div>
+            <div class="type-tab" data-tab="barcode">条形码</div>
+        </div>
+        
+        <div class="main-content">
+            <div class="settings-panel">
+                <!-- 二维码设置 -->
+                <div class="tab-content active" id="qrcode-tab">
+                    <div class="form-group">
+                        <label for="qrContent">二维码内容:</label>
+                        <textarea id="qrContent" placeholder="输入文本、网址或其他内容...">https://example.com</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="qrSize">尺寸 (像素):</label>
+                        <input type="number" id="qrSize" min="100" max="1000" value="300">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="qrErrorCorrection">错误校正级别:</label>
+                        <select id="qrErrorCorrection">
+                            <option value="L">低 (7%)</option>
+                            <option value="M" selected>中 (15%)</option>
+                            <option value="Q">高 (25%)</option>
+                            <option value="H">最高 (30%)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="qrFgColor">前景色:</label>
+                        <input type="color" id="qrFgColor" value="#000000">
+                        <span class="color-preview" id="fgColorPreview" style="background-color: #000000;"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="qrBgColor">背景色:</label>
+                        <input type="color" id="qrBgColor" value="#FFFFFF">
+                        <span class="color-preview" id="bgColorPreview" style="background-color: #FFFFFF;"></span>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="qrWithLogo"> 添加Logo
+                        </label>
+                        
+                        <div class="logo-upload" id="logoUpload">
+                            <input type="file" id="logoFile" accept="image/*">
+                            <img id="logoPreview" alt="Logo预览">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 条形码设置 -->
+                <div class="tab-content" id="barcode-tab">
+                    <div class="form-group">
+                        <label for="barcodeContent">条形码内容:</label>
+                        <input type="text" id="barcodeContent" placeholder="输入条形码内容..." value="12345678">
+                        <div class="error-message" id="barcodeError" style="color: #ff4444; font-size: 12px; margin-top: 5px; display: none;"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="barcodeType">条形码类型:</label>
+                        <select id="barcodeType">
+                            <option value="CODE128" selected>CODE128 (通用)</option>
+                            <option value="EAN13">EAN-13 (商品码)</option>
+                            <option value="UPC">UPC-A (通用商品码)</option>
+                            <option value="CODE39">CODE39 (字母数字)</option>
+                            <option value="ITF">ITF (数字)</option>
+                        </select>
+                        <div id="formatHint" style="font-size: 12px; color: #666; margin-top: 5px;"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="barcodeWidth">宽度 (像素):</label>
+                        <input type="number" id="barcodeWidth" min="200" max="1000" value="300">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="barcodeHeight">高度 (像素):</label>
+                        <input type="number" id="barcodeHeight" min="50" max="500" value="100">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="barcodeFgColor">前景色:</label>
+                        <input type="color" id="barcodeFgColor" value="#000000">
+                        <span class="color-preview" id="barcodeFgColorPreview" style="background-color: #000000;"></span>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="barcodeBgColor">背景色:</label>
+                        <input type="color" id="barcodeBgColor" value="#FFFFFF">
+                        <span class="color-preview" id="barcodeBgColorPreview" style="background-color: #FFFFFF;"></span>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="barcodeShowText" checked> 显示文本
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="qrcode-panel">
+                <h3 id="previewTitle">二维码预览</h3>
+                <div class="qrcode-container">
+                    <img id="qrcode" alt="二维码预览">
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn" id="generateBtn">生成</button>
+                    <button class="btn" id="downloadBtn">下载</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 引入 QRCode.js 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <!-- 引入 JsBarcode 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const qrContent = document.getElementById('qrContent');
+            const qrSize = document.getElementById('qrSize');
+            const qrErrorCorrection = document.getElementById('qrErrorCorrection');
+            const qrFgColor = document.getElementById('qrFgColor');
+            const qrBgColor = document.getElementById('qrBgColor');
+            const fgColorPreview = document.getElementById('fgColorPreview');
+            const bgColorPreview = document.getElementById('bgColorPreview');
+            const qrWithLogo = document.getElementById('qrWithLogo');
+            const logoUpload = document.getElementById('logoUpload');
+            const logoFile = document.getElementById('logoFile');
+            const logoPreview = document.getElementById('logoPreview');
+            
+            const barcodeContent = document.getElementById('barcodeContent');
+            const barcodeType = document.getElementById('barcodeType');
+            const barcodeWidth = document.getElementById('barcodeWidth');
+            const barcodeHeight = document.getElementById('barcodeHeight');
+            const barcodeFgColor = document.getElementById('barcodeFgColor');
+            const barcodeBgColor = document.getElementById('barcodeBgColor');
+            const barcodeFgColorPreview = document.getElementById('barcodeFgColorPreview');
+            const barcodeBgColorPreview = document.getElementById('barcodeBgColorPreview');
+            const barcodeShowText = document.getElementById('barcodeShowText');
+            
+            const typeTabs = document.querySelectorAll('.type-tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const previewTitle = document.getElementById('previewTitle');
+            const qrcodeImg = document.getElementById('qrcode');
+            const generateBtn = document.getElementById('generateBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            
+            // 当前码类型
+            let currentCodeType = 'qrcode';
+            
+            // 生成按钮点击事件
+            generateBtn.addEventListener('click', generateCode);
+            
+            // 下载按钮点击事件
+            downloadBtn.addEventListener('click', downloadCode);
+            
+            // 颜色选择器变化事件
+            qrFgColor.addEventListener('input', function() {
+                fgColorPreview.style.backgroundColor = this.value;
+            });
+            
+            qrBgColor.addEventListener('input', function() {
+                bgColorPreview.style.backgroundColor = this.value;
+            });
+            
+            barcodeFgColor.addEventListener('input', function() {
+                barcodeFgColorPreview.style.backgroundColor = this.value;
+            });
+            
+            barcodeBgColor.addEventListener('input', function() {
+                barcodeBgColorPreview.style.backgroundColor = this.value;
+            });
+            
+            // Logo复选框变化事件
+            qrWithLogo.addEventListener('change', function() {
+                logoUpload.style.display = this.checked ? 'block' : 'none';
+            });
+            
+            // Logo文件选择事件
+            logoFile.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        logoPreview.src = e.target.result;
+                        logoPreview.style.display = 'block';
+                    };
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+            
+            // 标签切换事件
+            typeTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // 更新活动标签
+                    typeTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // 更新活动内容
+                    const tabId = this.getAttribute('data-tab');
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    document.getElementById(tabId + '-tab').classList.add('active');
+                    
+                    // 更新当前码类型
+                    currentCodeType = tabId;
+                    
+                    // 更新预览标题
+                    previewTitle.textContent = tabId === 'qrcode' ? '二维码预览' : '条形码预览';
+                    
+                    // 生成新代码
+                    generateCode();
+                });
+            });
+            
+            // 页面加载时生成默认代码
+            generateCode();
+            
+            // 生成码函数
+            function generateCode() {
+                if (currentCodeType === 'qrcode') {
+                    generateQRCode();
+                } else {
+                    generateBarcode();
+                }
+            }
+            
+            // 生成二维码
+            function generateQRCode() {
+                try {
+                    const text = qrContent.value.trim() || 'https://example.com';
+                    const size = parseInt(qrSize.value) || 300;
+                    const errorLevel = qrErrorCorrection.value;
+                    
+                    // 使用 QRCode 库生成二维码
+                    const qr = qrcode(0, errorLevel);
+                    qr.addData(text);
+                    qr.make();
+                    
+                    // 设置颜色
+                    const darkColor = qrFgColor.value;
+                    const lightColor = qrBgColor.value;
+                    
+                    // 获取二维码 SVG
+                    const svgData = qr.createSvgTag({
+                        cellSize: Math.floor(size / qr.getModuleCount()),
+                        margin: 0,
+                        scalable: true
+                    });
+                    
+                    // 创建临时 div 来处理 SVG
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = svgData;
+                    const svgElement = tempDiv.querySelector('svg');
+                    
+                    // 设置 SVG 颜色
+                    Array.from(svgElement.querySelectorAll('rect')).forEach(rect => {
+                        if (rect.getAttribute('fill') === '#000000') {
+                            rect.setAttribute('fill', darkColor);
+                        } else if (rect.getAttribute('fill') === '#ffffff') {
+                            rect.setAttribute('fill', lightColor);
+                        }
+                    });
+                    
+                    // 设置 SVG 尺寸
+                    svgElement.setAttribute('width', size);
+                    svgElement.setAttribute('height', size);
+                    
+                    // 转换 SVG 为 Data URL
+                    const svgString = new XMLSerializer().serializeToString(svgElement);
+                    const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+                    
+                    // 如果选择了 Logo，在 Canvas 上绘制 Logo
+                    if (qrWithLogo.checked && logoPreview.src) {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = size;
+                        canvas.height = size;
+                        const ctx = canvas.getContext('2d');
+                        
+                        const svgImg = new Image();
+                        svgImg.onload = function() {
+                            // 绘制二维码
+                            ctx.drawImage(svgImg, 0, 0, size, size);
+                            
+                            // 绘制 Logo
+                            const logoImg = new Image();
+                            logoImg.onload = function() {
+                                // 计算 Logo 尺寸和位置（居中，尺寸为二维码的 20%）
+                                const logoSize = size * 0.2;
+                                const logoX = (size - logoSize) / 2;
+                                const logoY = (size - logoSize) / 2;
+                                
+                                // 绘制白色背景
+                                ctx.fillStyle = '#FFFFFF';
+                                ctx.fillRect(logoX - 5, logoY - 5, logoSize + 10, logoSize + 10);
+                                
+                                // 绘制 Logo
+                                ctx.drawImage(logoImg, logoX, logoY, logoSize, logoSize);
+                                
+                                // 更新预览
+                                qrcodeImg.src = canvas.toDataURL('image/png');
+                            };
+                            logoImg.src = logoPreview.src;
+                        };
+                        svgImg.src = svgDataUrl;
+                    } else {
+                        // 直接显示 SVG
+                        qrcodeImg.src = svgDataUrl;
+                    }
+                } catch (error) {
+                    console.error('生成二维码出错:', error);
+                    alert('生成二维码时出错，请检查输入内容。');
+                }
+            }
+            
+            // 生成条形码
+            function generateBarcode() {
+                try {
+                    const text = barcodeContent.value.trim();
+                    const type = barcodeType.value;
+                    const width = parseInt(barcodeWidth.value) || 300;
+                    const height = parseInt(barcodeHeight.value) || 100;
+                    
+                    // 验证输入格式
+                    if (!isValidBarcodeInput(text, type)) {
+                        return;
+                    }
+
+                    // 隐藏错误提示
+                    document.getElementById('barcodeError').style.display = 'none';
+
+                    // 设置条形码选项
+                    const options = {
+                        format: type,
+                        // 根据总宽度自动计算单个条的宽度
+                        width: width / Math.max(text.length * 1.5, 20),
+                        height: height,
+                        displayValue: barcodeShowText.checked,
+                        background: barcodeBgColor.value,
+                        lineColor: barcodeFgColor.value,
+                        margin: 20,
+                        fontSize: 16,
+                        textMargin: 8,
+                        valid: function(valid) {
+                            if (!valid) {
+                                showError("无法生成条形码，请检查输入内容是否符合所选条形码类型的要求。");
+                            }
+                        }
+                    };
+
+                    // 根据不同类型调整特定选项
+                    switch(type) {
+                        case 'EAN13':
+                        case 'UPC':
+                            options.flat = false;
+                            options.fontSize = 14;
+                            options.textMargin = 4;
+                            break;
+                        case 'CODE39':
+                            options.mod43 = true; // 添加校验位
+                            break;
+                        case 'ITF':
+                            if (text.length % 2 !== 0) {
+                                text = '0' + text; // 确保偶数位数
+                            }
+                            break;
+                    }
+                    
+                    const canvas = document.createElement('canvas');
+                    
+                    // 使用 JsBarcode 生成条形码
+                    JsBarcode(canvas, text, options);
+                    
+                    // 调整Canvas尺寸以适应指定宽度
+                    const scaledCanvas = document.createElement('canvas');
+                    scaledCanvas.width = width;
+                    scaledCanvas.height = height;
+                    const ctx = scaledCanvas.getContext('2d');
+                    // 使用更好的图像平滑算法
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.fillStyle = options.background;
+                    ctx.fillRect(0, 0, width, height);
+                    ctx.drawImage(canvas, 0, 0, width, height);
+                    
+                    // 更新预览
+                    qrcodeImg.src = scaledCanvas.toDataURL('image/png');
+                } catch (error) {
+                    console.error('生成条形码出错:', error);
+                    showError('生成条形码时出错: ' + error.message);
+                }
+            }
+            
+            // 验证条形码输入
+            function isValidBarcodeInput(text, type) {
+                const formatHint = document.getElementById('formatHint');
+                const errorElement = document.getElementById('barcodeError');
+                let isValid = true;
+                let hint = '';
+
+                if (!text) {
+                    isValid = false;
+                    hint = '请输入内容';
+                } else {
+                    switch (type) {
+                        case 'EAN13':
+                            isValid = /^\d{12,13}$/.test(text);
+                            hint = '需要12或13位数字，最后一位为校验位';
+                            break;
+                        case 'UPC':
+                            isValid = /^\d{11,12}$/.test(text);
+                            hint = '需要11或12位数字，最后一位为校验位';
+                            break;
+                        case 'CODE39':
+                            isValid = /^[0-9A-Z\-\.\ \$\/\+\%]+$/.test(text);
+                            hint = '仅支持大写字母、数字和特殊符号 - . $ / + %';
+                            break;
+                        case 'ITF':
+                            isValid = /^\d+$/.test(text);
+                            hint = '仅支持数字，将自动补齐为偶数位';
+                            break;
+                        case 'CODE128':
+                            isValid = text.length > 0 && text.length <= 128;
+                            hint = '支持ASCII字符，长度不超过128';
+                            break;
+                    }
+                }
+
+                // 更新格式提示信息
+                formatHint.textContent = `格式要求：${hint}`;
+                formatHint.style.color = '#666';
+
+                // 显示或隐藏错误信息
+                if (!isValid) {
+                    showError(hint);
+                } else {
+                    errorElement.style.display = 'none';
+                }
+
+                return isValid;
+            }
+            
+            // 显示错误信息
+            function showError(message) {
+                const errorElement = document.getElementById('barcodeError');
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+                // 添加轻微的动画效果
+                errorElement.style.animation = 'none';
+                errorElement.offsetHeight; // 触发重绘
+                errorElement.style.animation = 'shake 0.5s';
+            }
+            
+            // 添加错误提示的动画样式
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes shake {
+                    0%, 100% { transform: translateX(0); }
+                    25% { transform: translateX(-5px); }
+                    75% { transform: translateX(5px); }
+                }
+                .error-message {
+                    transition: all 0.3s ease;
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // 条形码类型变更时更新提示
+            barcodeType.addEventListener('change', function() {
+                const text = barcodeContent.value.trim();
+                isValidBarcodeInput(text, this.value);
+            });
+            
+            // 条形码内容输入时实时验证
+            barcodeContent.addEventListener('input', function() {
+                const text = this.value.trim();
+                isValidBarcodeInput(text, barcodeType.value);
+            });
+            
+            // 下载码函数
+            function downloadCode() {
+                // 创建下载链接
+                const link = document.createElement('a');
+                link.href = qrcodeImg.src;
+                
+                // 设置文件名
+                const fileName = currentCodeType === 'qrcode' ? 'qrcode.png' : 'barcode.png';
+                link.download = fileName;
+                
+                // 触发下载
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        });
+    </script>
+</body>
+</html> 

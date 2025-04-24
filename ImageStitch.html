@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图像拼接工具</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            background-color: #f9f9f9;
+        }
+        
+        header {
+            background-color: #4285f4;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        p {
+            margin: 5px 0 0;
+            font-size: 14px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        
+        .upload-container {
+            background-color: white;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .upload-container:hover {
+            border-color: #4285f4;
+        }
+        
+        .upload-container p {
+            margin-bottom: 15px;
+            color: #666;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .btn {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #3367d6;
+        }
+        
+        .reset-btn {
+            background-color: #f5f5f5;
+            color: #666;
+            border: 1px solid #ddd;
+        }
+        
+        .reset-btn:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #4285f4;
+            text-decoration: none;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+        }
+        
+        .settings-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+            align-items: flex-start;
+        }
+        
+        .setting-item {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .setting-item label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .radio-label {
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .radio-label input[type="radio"] {
+            margin-right: 5px;
+        }
+        
+        input[type="range"] {
+            flex: 1;
+            max-width: 150px;
+        }
+        
+        input[type="color"] {
+            height: 30px;
+            width: 60px;
+            padding: 0;
+            cursor: pointer;
+            border: 1px solid #ddd;
+        }
+        
+        .buttons-row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        #spacingValue, #colorValue {
+            font-size: 13px;
+            color: #666;
+            min-width: 60px;
+        }
+        
+        @media (max-width: 768px) {
+            .settings-row {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .setting-item {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="upload-container" id="dropArea">
+            <p>点击或拖拽图片到此处上传（支持JPG、PNG、GIF、WebP格式）</p>
+            <input type="file" id="fileInput" accept="image/*" multiple>
+            <button class="btn" id="uploadBtn">选择图片</button>
+        </div>
+        
+        <div class="stitch-options">
+            <h2>拼接设置</h2>
+            <div class="settings-row">
+                <div class="setting-item stitch-type">
+                    <label>拼接方向</label>
+                    <div class="controls">
+                        <label class="radio-label">
+                    <input type="radio" name="stitchType" value="horizontal" checked> 水平拼接
+                </label>
+                        <label class="radio-label">
+                    <input type="radio" name="stitchType" value="vertical"> 垂直拼接
+                </label>
+                    </div>
+            </div>
+            
+                <div class="setting-item">
+                <label for="spacing">图片间距</label>
+                    <div class="controls">
+                <input type="range" id="spacing" min="0" max="100" value="10">
+                        <span id="spacingValue">10px</span>
+                    </div>
+            </div>
+            
+                <div class="setting-item">
+                <label for="bgColor">背景颜色</label>
+                    <div class="controls">
+                <input type="color" id="bgColor" value="#FFFFFF">
+                        <span id="colorValue">#FFFFFF</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="buttons-row">
+            <button class="btn" id="stitchBtn">拼接图片</button>
+            <button class="btn reset-btn" id="resetBtn">重置</button>
+            </div>
+        </div>
+        
+        <div class="preview-container">
+            <h2>预览</h2>
+            <div class="preview-image-container">
+                <canvas id="previewCanvas"></canvas>
+            </div>
+            <button class="btn" id="downloadBtn">下载图片</button>
+        </div>
+    </div>
+    
+    <script>
+        // 这里将添加JavaScript代码来处理图片拼接功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const dropArea = document.getElementById('dropArea');
+            const previewCanvas = document.getElementById('previewCanvas');
+            const ctx = previewCanvas.getContext('2d');
+            const stitchBtn = document.getElementById('stitchBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const stitchTypeRadios = document.getElementsByName('stitchType');
+            const spacing = document.getElementById('spacing');
+            const bgColor = document.getElementById('bgColor');
+            
+            // 变量
+            let imageArray = [];
+            let stitchedImage = null;
+            
+            // 事件监听
+            uploadBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            // 拖放功能
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropArea.classList.add('highlight');
+            }
+            
+            function unhighlight() {
+                dropArea.classList.remove('highlight');
+            }
+            
+            dropArea.addEventListener('drop', handleDrop, false);
+            
+            // 拼接按钮
+            stitchBtn.addEventListener('click', stitchImages);
+            
+            // 下载按钮
+            downloadBtn.addEventListener('click', downloadImage);
+            
+            // 重置按钮
+            resetBtn.addEventListener('click', resetCanvas);
+            
+            // 文件处理函数
+            function handleFileSelect(e) {
+                const files = e.target.files;
+                if (files.length > 0) {
+                    handleFiles(files);
+                }
+            }
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                handleFiles(files);
+            }
+            
+            function handleFiles(files) {
+                // 如果没有选择文件，直接返回
+                if (files.length === 0) {
+                    return;
+                }
+                
+                // 清空之前的图片
+                imageArray = [];
+                showLoader('正在加载图片...');
+                
+                let loadedCount = 0;
+                const totalFiles = files.length;
+                
+                // 创建图像预览容器
+                const previewContainer = document.createElement('div');
+                previewContainer.className = 'image-list';
+                previewContainer.innerHTML = '<h3>已选择的图片:</h3>';
+                
+                // 添加样式
+                const style = document.createElement('style');
+                style.textContent = `
+                    .image-list {
+                        margin: 20px 0;
+                        background: white;
+                        border-radius: 5px;
+                        padding: 15px;
+                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                    }
+                    
+                    .image-list h3 {
+                        margin-top: 0;
+                        color: #333;
+                    }
+                    
+                    .image-preview {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                        margin-top: 10px;
+                    }
+                    
+                    .image-item {
+                        position: relative;
+                        width: 100px;
+                        height: 100px;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                        overflow: hidden;
+                    }
+                    
+                    .image-item img {
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                    }
+                    
+                    .image-item .delete-btn {
+                        position: absolute;
+                        top: 2px;
+                        right: 2px;
+                        background: rgba(255, 0, 0, 0.7);
+                        color: white;
+                        border: none;
+                        border-radius: 50%;
+                        width: 20px;
+                        height: 20px;
+                        line-height: 20px;
+                        font-size: 12px;
+                        padding: 0;
+                        cursor: pointer;
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                // 创建图像预览列表
+                const imagePreview = document.createElement('div');
+                imagePreview.className = 'image-preview';
+                previewContainer.appendChild(imagePreview);
+                
+                // 移除旧的预览
+                const oldPreview = document.querySelector('.image-list');
+                if (oldPreview) {
+                    oldPreview.remove();
+                }
+                
+                // 将预览容器添加到页面
+                document.querySelector('.stitch-options').after(previewContainer);
+                
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    
+                    if (!file.type.match('image.*')) {
+                        alert('请上传图片文件!');
+                        continue;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const img = new Image();
+                        img.onload = function() {
+                            imageArray.push(img);
+                            
+                            // 创建图像预览
+                            const imageItem = document.createElement('div');
+                            imageItem.className = 'image-item';
+                            
+                            const thumbnail = document.createElement('img');
+                            thumbnail.src = e.target.result;
+                            thumbnail.alt = `图片 ${i + 1}`;
+                            
+                            const deleteBtn = document.createElement('button');
+                            deleteBtn.className = 'delete-btn';
+                            deleteBtn.innerHTML = '&times;';
+                            deleteBtn.title = '删除图片';
+                            deleteBtn.addEventListener('click', () => {
+                                // 从数组和预览中移除图片
+                                imageArray.splice(imageArray.indexOf(img), 1);
+                                imageItem.remove();
+                                
+                                // 如果删除后没有图片了，显示上传区域指示语
+                                if (imageArray.length === 0) {
+                                    dropArea.querySelector('p').style.display = 'block';
+                                }
+                            });
+                            
+                            imageItem.appendChild(thumbnail);
+                            imageItem.appendChild(deleteBtn);
+                            imagePreview.appendChild(imageItem);
+                            
+                            loadedCount++;
+                            // 当所有图片加载完成时
+                            if (loadedCount === totalFiles) {
+                                hideLoader();
+                                
+                                // 隐藏上传区域指示语
+                                dropArea.querySelector('p').style.display = 'none';
+                            }
+                        };
+                        img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+            
+            // 显示加载器
+            function showLoader(message = '处理中...') {
+                // 创建加载器元素（如果不存在）
+                let loader = document.getElementById('loader');
+                if (!loader) {
+                    loader = document.createElement('div');
+                    loader.id = 'loader';
+                    loader.className = 'loader';
+                    loader.innerHTML = `
+                        <div class="spinner"></div>
+                        <p id="loaderMessage">${message}</p>
+                    `;
+                    document.body.appendChild(loader);
+                    
+                    // 添加样式
+                    const style = document.createElement('style');
+                    style.innerHTML = `
+                        .loader {
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background-color: rgba(0, 0, 0, 0.5);
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;
+                            z-index: 9999;
+                        }
+                        
+                        .spinner {
+                            border: 5px solid #f3f3f3;
+                            border-top: 5px solid #4285f4;
+                            border-radius: 50%;
+                            width: 50px;
+                            height: 50px;
+                            animation: spin 2s linear infinite;
+                        }
+                        
+                        @keyframes spin {
+                            0% { transform: rotate(0deg); }
+                            100% { transform: rotate(360deg); }
+                        }
+                        
+                        #loaderMessage {
+                            margin-top: 15px;
+                            color: white;
+                            font-size: 16px;
+                        }
+                    `;
+                    document.head.appendChild(style);
+                } else {
+                    document.getElementById('loaderMessage').textContent = message;
+                    loader.style.display = 'flex';
+                }
+                
+                // 禁用按钮
+                stitchBtn.disabled = true;
+            }
+            
+            // 隐藏加载器
+            function hideLoader() {
+                const loader = document.getElementById('loader');
+                if (loader) {
+                    loader.style.display = 'none';
+                }
+                
+                // 启用按钮
+                stitchBtn.disabled = false;
+            }
+            
+            // 拼接图片函数
+            function stitchImages() {
+                if (imageArray.length < 2) {
+                    alert('请上传至少两张图片!');
+                    return;
+                }
+                
+                showLoader('正在拼接图片...');
+                
+                // 获取设置
+                let stitchType = 'horizontal';
+                stitchTypeRadios.forEach(radio => {
+                    if (radio.checked) stitchType = radio.value;
+                });
+                const spacingValue = parseInt(spacing.value);
+                const backgroundColor = bgColor.value;
+                
+                // 计算尺寸
+                let totalWidth = 0;
+                let totalHeight = 0;
+                let maxWidth = 0;
+                let maxHeight = 0;
+                
+                for (const img of imageArray) {
+                    if (stitchType === 'horizontal') {
+                        totalWidth += img.width;
+                        maxHeight = Math.max(maxHeight, img.height);
+                    } else {
+                        totalHeight += img.height;
+                        maxWidth = Math.max(maxWidth, img.width);
+                    }
+                }
+                
+                // 添加间距
+                if (stitchType === 'horizontal') {
+                    totalWidth += spacingValue * (imageArray.length - 1);
+                    totalHeight = maxHeight;
+                } else {
+                    totalHeight += spacingValue * (imageArray.length - 1);
+                    totalWidth = maxWidth;
+                }
+                
+                // 设置画布大小
+                previewCanvas.width = totalWidth;
+                previewCanvas.height = totalHeight;
+                
+                // 设置背景颜色
+                ctx.fillStyle = backgroundColor;
+                ctx.fillRect(0, 0, previewCanvas.width, previewCanvas.height);
+                
+                // 绘制图像
+                let currentX = 0;
+                let currentY = 0;
+                
+                for (const img of imageArray) {
+                    if (stitchType === 'horizontal') {
+                        // 垂直居中
+                        const y = (maxHeight - img.height) / 2;
+                        ctx.drawImage(img, currentX, y);
+                        currentX += img.width + spacingValue;
+                    } else {
+                        // 水平居中
+                        const x = (maxWidth - img.width) / 2;
+                        ctx.drawImage(img, x, currentY);
+                        currentY += img.height + spacingValue;
+                    }
+                }
+                
+                // 保存拼接结果
+                stitchedImage = previewCanvas.toDataURL('image/png');
+                
+                // 显示预览区域
+                document.querySelector('.preview-container').style.display = 'block';
+                
+                // 启用下载按钮
+                downloadBtn.disabled = false;
+                
+                hideLoader();
+            }
+            
+            // 下载图片函数
+            function downloadImage() {
+                if (!stitchedImage) {
+                    alert('请先拼接图片!');
+                    return;
+                }
+                
+                // 创建下载链接
+                const link = document.createElement('a');
+                link.download = 'stitched-image.png';
+                link.href = stitchedImage;
+                link.click();
+            }
+            
+            // 重置函数
+            function resetCanvas() {
+                // 清空画布
+                ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                
+                // 重置状态
+                imageArray = [];
+                stitchedImage = null;
+                downloadBtn.disabled = true;
+                
+                // 隐藏预览区域
+                document.querySelector('.preview-container').style.display = 'none';
+                
+                // 移除图片预览
+                const imageList = document.querySelector('.image-list');
+                if (imageList) {
+                    imageList.remove();
+                }
+                
+                // 重置滑块和颜色选择器
+                spacing.value = 10;
+                document.getElementById('spacingValue').textContent = '10px';
+                bgColor.value = '#FFFFFF';
+                document.getElementById('colorValue').textContent = '#FFFFFF';
+                
+                // 确保水平拼接被选中
+                stitchTypeRadios.forEach(radio => {
+                    radio.checked = radio.value === 'horizontal';
+                });
+                
+                // 重新启用文件选择
+                fileInput.value = '';
+                uploadBtn.disabled = false;
+                
+                // 显示上传区域指示语
+                dropArea.querySelector('p').style.display = 'block';
+            }
+            
+            // 初始化设置
+            document.querySelector('.preview-container').style.display = 'none';
+            downloadBtn.disabled = true;
+            
+            // 添加样式
+            const style = document.createElement('style');
+            style.textContent = `
+                .preview-image-container {
+                    max-width: 100%;
+                    overflow-x: auto;
+                    margin-bottom: 20px;
+                    background-image: linear-gradient(45deg, #f0f0f0 25%, transparent 25%), linear-gradient(-45deg, #f0f0f0 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0f0f0 75%), linear-gradient(-45deg, transparent 75%, #f0f0f0 75%);
+                    background-size: 20px 20px;
+                    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+                }
+                
+                #previewCanvas {
+                    display: block;
+                    max-width: 100%;
+                    border: 1px solid #ddd;
+                }
+                
+                .stitch-options, .preview-container {
+                    background-color: white;
+                    padding: 20px;
+                    border-radius: 5px;
+                    margin-bottom: 20px;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+                }
+                
+                .stitch-type {
+                    margin-bottom: 15px;
+                }
+                
+                .form-group {
+                    margin-bottom: 15px;
+                }
+                
+                .form-group label {
+                    display: block;
+                    margin-bottom: 5px;
+                    color: #555;
+                }
+                
+                .highlight {
+                    border-color: #4285f4;
+                    background-color: #e8f0fe;
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // 添加JavaScript代码以更新显示值
+            spacing.addEventListener('input', function() {
+                document.getElementById('spacingValue').textContent = this.value + 'px';
+            });
+            
+            bgColor.addEventListener('input', function() {
+                document.getElementById('colorValue').textContent = this.value.toUpperCase();
+            });
+        });
+    </script>
+</body>
+</html>

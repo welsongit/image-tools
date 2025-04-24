@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图像元数据查看器</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            background-color: #f9f9f9;
+        }
+        
+        header {
+            background-color: #4285f4;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        p {
+            margin: 5px 0 0;
+            font-size: 14px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        
+        .upload-container {
+            background-color: white;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .upload-container:hover {
+            border-color: #4285f4;
+        }
+        
+        .upload-container p {
+            margin-bottom: 15px;
+            color: #666;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .btn {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #3367d6;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #4285f4;
+            text-decoration: none;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+        }
+        
+        .metadata-container, .preview-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        
+        .metadata-table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        
+        #metadataTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        #metadataTable th, #metadataTable td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        
+        #metadataTable th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+        
+        #metadataTable tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        #metadataTable tr:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .metadata-value {
+            padding: 8px 12px;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+        
+        .preview-image-container {
+            text-align: center;
+        }
+        
+        #previewImage {
+            max-width: 100%;
+            max-height: 400px;
+            border: 1px solid #ddd;
+        }
+        
+        .highlight {
+            border-color: #4285f4;
+            background-color: #e8f0fe;
+        }
+        
+        .metadata-group {
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .metadata-header {
+            font-weight: bold;
+            color: #4285f4;
+            background-color: #f5f5f5;
+        }
+        
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #4285f4;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #loaderMessage {
+            margin-top: 15px;
+            color: white;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="upload-container" id="dropArea">
+            <p>点击或拖拽图片到此处上传（支持JPG、PNG、GIF、WebP格式）</p>
+            <input type="file" id="fileInput" accept="image/*">
+            <button class="btn" id="uploadBtn">选择图片</button>
+        </div>
+        
+        <div class="metadata-container">
+            <h2>元数据信息</h2>
+            <div class="metadata-table-container">
+                <table id="metadataTable">
+                    <thead>
+                        <tr>
+                            <th>属性</th>
+                            <th>值</th>
+                        </tr>
+                    </thead>
+                    <tbody id="metadataBody">
+                        <!-- 元数据将在这里动态生成 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="preview-container">
+            <h2>图像预览</h2>
+            <div class="preview-image-container">
+                <img id="previewImage" src="" alt="预览图像">
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+    <script>
+        // 这里将添加JavaScript代码来处理元数据查看功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const dropArea = document.getElementById('dropArea');
+            const previewImage = document.getElementById('previewImage');
+            const metadataTable = document.getElementById('metadataTable');
+            const metadataBody = document.getElementById('metadataBody');
+            const metadataContainer = document.querySelector('.metadata-container');
+            const previewContainer = document.querySelector('.preview-container');
+            
+            // 变量
+            let currentFile = null;
+            let originalMetadata = {};
+            
+            // 文件类型签名数据
+            const fileSignatures = {
+                // JPEG 签名
+                'ffd8ff': 'JPEG',
+                // PNG 签名
+                '89504e47': 'PNG',
+                // GIF 签名
+                '47494638': 'GIF',
+                // WebP 签名
+                '52494646': 'WebP',
+                // BMP 签名
+                '424d': 'BMP',
+                // TIFF 签名 (小端)
+                '49492a00': 'TIFF',
+                // TIFF 签名 (大端)
+                '4d4d002a': 'TIFF',
+                // ICO 签名
+                '00000100': 'ICO'
+            };
+            
+            // 属性名称的中文映射
+            const propertyNameMap = {
+                // 文件基本信息
+                'file.name': '文件名称',
+                'file.type': '文件类型',
+                'file.realType': '真实文件类型',
+                'file.size': '文件大小',
+                'file.lastModified': '最后修改时间',
+                
+                // 图像基本信息
+                'image.width': '图像宽度',
+                'image.height': '图像高度',
+                'image.aspectRatio': '宽高比',
+                'image.format': '图像格式',
+                'image.mimeType': 'MIME类型',
+                'image.hasTransparency': '包含透明度',
+                'image.compressionEfficiency': '压缩效率',
+                
+                // 相机信息
+                'camera.header': '相机信息',
+                'Make': '相机品牌',
+                'Model': '相机型号',
+                'Software': '处理软件',
+                'LensMake': '镜头品牌',
+                'LensModel': '镜头型号',
+                
+                // 拍摄信息
+                'shooting.header': '拍摄信息',
+                'DateTime': '拍摄时间',
+                'DateTimeOriginal': '原始拍摄时间',
+                'DateTimeDigitized': '数字化时间',
+                'ExposureTime': '曝光时间',
+                'FNumber': '光圈值',
+                'ExposureProgram': '曝光程序',
+                'ISOSpeedRatings': 'ISO感光度',
+                'ShutterSpeedValue': '快门速度',
+                'ApertureValue': '光圈值',
+                'BrightnessValue': '亮度值',
+                'ExposureBiasValue': '曝光补偿',
+                'MaxApertureValue': '最大光圈值',
+                'MeteringMode': '测光模式',
+                'Flash': '闪光灯',
+                'FocalLength': '焦距',
+                'FocalLengthIn35mmFilm': '35mm等效焦距',
+                'WhiteBalance': '白平衡',
+                'SceneCaptureType': '场景类型',
+                
+                // GPS信息
+                'gps.header': '地理位置信息',
+                'GPSLatitude': '纬度',
+                'GPSLongitude': '经度',
+                'GPSAltitude': '海拔高度',
+                'GPSTimeStamp': 'GPS时间戳',
+                'GPSDateStamp': 'GPS日期戳',
+                'GPSImgDirection': '图像方向',
+                'GPSImgDirectionRef': '图像方向参考',
+                
+                // 其他EXIF信息
+                'other.header': '其他EXIF信息',
+                'Orientation': '图像方向',
+                'XResolution': 'X分辨率',
+                'YResolution': 'Y分辨率',
+                'ResolutionUnit': '分辨率单位',
+                'ColorSpace': '色彩空间',
+                'ExifImageWidth': 'EXIF图像宽度',
+                'ExifImageHeight': 'EXIF图像高度',
+                'Compression': '压缩方式',
+                'JPEGInterchangeFormat': 'JPEG交换格式',
+                'JPEGInterchangeFormatLength': 'JPEG交换格式长度'
+            };
+            
+            // 获取属性的中文名称
+            function getChinesePropertyName(key) {
+                // 检查是否是分组头部
+                if (key.endsWith('.header')) {
+                    return propertyNameMap[key] || key;
+                }
+                
+                // 查找完整匹配
+                if (propertyNameMap[key]) {
+                    return propertyNameMap[key];
+                }
+                
+                // 尝试模糊匹配
+                for (const propKey in propertyNameMap) {
+                    // 跳过标题
+                    if (propKey.endsWith('.header')) continue;
+                    
+                    // 如果技术名称包含在原始键中
+                    if (key.includes(propKey)) {
+                        return propertyNameMap[propKey];
+                    }
+                }
+                
+                // 未找到映射，返回原始键
+                return key;
+            }
+            
+            // 事件监听
+            uploadBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            // 拖放功能
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropArea.classList.add('highlight');
+            }
+            
+            function unhighlight() {
+                dropArea.classList.remove('highlight');
+            }
+            
+            dropArea.addEventListener('drop', handleDrop, false);
+            
+            // 文件处理函数
+            function handleFileSelect(e) {
+                const files = e.target.files;
+                if (files.length > 0) {
+                    handleFiles(files[0]);
+                }
+            }
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                if (files.length > 0) {
+                    handleFiles(files[0]);
+                }
+            }
+            
+            function handleFiles(file) {
+                if (!file.type.match('image.*')) {
+                    alert('请上传图片文件!');
+                    return;
+                }
+                
+                currentFile = file;
+                
+                // 显示加载中
+                showLoader('正在加载元数据...');
+                
+                // 读取文件头以确定真实类型
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const arrayBuffer = e.target.result;
+                    const fileSignature = detectFileType(arrayBuffer);
+                    
+                    // 预览图像
+                    const imgReader = new FileReader();
+                    imgReader.onload = function(imgEvent) {
+                        previewImage.src = imgEvent.target.result;
+                        previewContainer.style.display = 'block';
+                        
+                        // 读取EXIF信息
+                        const img = new Image();
+                        img.onload = function() {
+                            // 获取基本图像信息
+                            collectBasicImageInfo(file, img, imgEvent.target.result, fileSignature);
+                            
+                            EXIF.getData(img, function() {
+                                // 获取所有元数据
+                                extractMetadata(img);
+                                
+                                // 显示元数据表格
+                                metadataContainer.style.display = 'block';
+                                
+                                hideLoader();
+                            });
+                        };
+                        img.src = imgEvent.target.result;
+                    };
+                    imgReader.readAsDataURL(file);
+                };
+                reader.readAsArrayBuffer(file.slice(0, 12)); // 只读取前12个字节来检测文件类型
+            }
+            
+            // 检测文件类型
+            function detectFileType(arrayBuffer) {
+                const uint8Array = new Uint8Array(arrayBuffer);
+                let fileSignature = '';
+                
+                // 转换为十六进制字符串
+                for (let i = 0; i < uint8Array.length; i++) {
+                    fileSignature += uint8Array[i].toString(16).padStart(2, '0');
+                }
+                
+                // 检查文件签名
+                for (const signature in fileSignatures) {
+                    if (fileSignature.startsWith(signature)) {
+                        return fileSignatures[signature];
+                    }
+                }
+                
+                // 对于特殊的WebP文件，需要进一步检查
+                if (fileSignature.startsWith('52494646')) { // "RIFF"
+                    // WebP文件在第8-12字节包含"WEBP"字符串
+                    if (uint8Array.length >= 12) {
+                        const webpSignature = String.fromCharCode(
+                            uint8Array[8], uint8Array[9], uint8Array[10], uint8Array[11]
+                        );
+                        if (webpSignature === 'WEBP') {
+                            return 'WebP';
+                        }
+                    }
+                }
+                
+                return '未知';
+            }
+            
+            // 收集基本图像信息
+            function collectBasicImageInfo(file, img, dataURL, realFileType) {
+                // 图像基本信息分组
+                const basicInfo = {
+                    // 文件信息
+                    'file.name': file.name,
+                    'file.type': file.type,
+                    'file.realType': realFileType || '未知',
+                    'file.size': formatBytes(file.size),
+                    'file.lastModified': new Date(file.lastModified).toLocaleString(),
+                    
+                    // 图像尺寸
+                    'image.width': img.width + 'px',
+                    'image.height': img.height + 'px',
+                    'image.aspectRatio': (img.width / img.height).toFixed(2),
+                    
+                    // 格式信息
+                    'image.format': file.type.split('/')[1].toUpperCase(),
+                    'image.mimeType': file.type
+                };
+                
+                // 检测图片颜色深度和透明度
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.min(img.width, 100); // 使用较小尺寸提高性能
+                    canvas.height = Math.min(img.height, 100);
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
+                    // 检查是否有透明像素
+                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imageData.data;
+                    let hasTransparency = false;
+                    
+                    // 检查前10个像素是否有透明度(alpha < 255)
+                    for (let i = 3; i < Math.min(100, data.length); i += 4) {
+                        if (data[i] < 255) {
+                            hasTransparency = true;
+                            break;
+                        }
+                    }
+                    
+                    basicInfo['image.hasTransparency'] = hasTransparency ? '是' : '否';
+                } catch (e) {
+                    console.error('无法检测图像透明度:', e);
+                }
+                
+                // 估算文件大小与格式效率
+                const compressionRatio = estimateCompressionRatio(file.size, img.width, img.height);
+                basicInfo['image.compressionEfficiency'] = compressionRatio.toFixed(2) + '%';
+                
+                // 修改日期格式化
+                if (file.lastModified) {
+                    basicInfo['file.lastModified'] = new Date(file.lastModified).toLocaleString();
+                }
+                
+                Object.assign(originalMetadata, basicInfo);
+            }
+            
+            // 估算压缩比率
+            function estimateCompressionRatio(fileSize, width, height) {
+                // 假设原始像素数据为RGBA格式(每像素4字节)
+                const rawSize = width * height * 4;
+                const compressionRatio = (fileSize / rawSize) * 100;
+                return compressionRatio;
+            }
+            
+            // 提取元数据
+            function extractMetadata(img) {
+                // 保持之前添加的基本信息
+                const currentMetadata = {...originalMetadata};
+                
+                // 获取EXIF数据
+                const allMetaData = EXIF.getAllTags(img);
+                if (allMetaData) {
+                    // 相机信息分组
+                    const cameraInfo = {};
+                    
+                    // 拍摄信息分组
+                    const shootingInfo = {};
+                    
+                    // GPS信息分组
+                    const gpsInfo = {};
+                    
+                    // 其他EXIF信息
+                    const otherInfo = {};
+                    
+                    for (const key in allMetaData) {
+                        let value = allMetaData[key];
+                        
+                        // 格式化特殊值
+                        if (key === 'GPSLatitude' || key === 'GPSLongitude') {
+                            if (Array.isArray(value)) {
+                                value = convertDMSToDD(value);
+                                gpsInfo[key] = value;
+                            }
+                        } else if (key === 'DateTime' || key.includes('Date')) {
+                            // 格式化日期
+                            if (typeof value === 'string' && value.length > 0) {
+                                value = formatExifDate(value);
+                                shootingInfo[key] = value;
+                            }
+                        } else if (key.includes('GPS')) {
+                            // GPS信息分组
+                            gpsInfo[key] = value;
+                        } else if (key.includes('Make') || key.includes('Model') || key.includes('Software')) {
+                            // 相机信息分组
+                            cameraInfo[key] = value;
+                        } else if (key.includes('Exposure') || key.includes('FNumber') || 
+                                  key.includes('ISO') || key.includes('Flash') || 
+                                  key.includes('Aperture') || key.includes('Focal')) {
+                            // 拍摄信息分组
+                            shootingInfo[key] = value;
+                        } else {
+                            // 其他EXIF信息
+                            otherInfo[key] = value;
+                        }
+                        
+                        // 如果值是对象或数组，转换为字符串
+                        if (typeof value === 'object') {
+                            value = JSON.stringify(value);
+                        }
+                    }
+                    
+                    // 合并所有元数据组，保持有序性
+                    const groupedMetadata = {
+                        ...currentMetadata,
+                        ...(Object.keys(cameraInfo).length ? {'camera.header': '相机信息'} : {}),
+                        ...cameraInfo,
+                        ...(Object.keys(shootingInfo).length ? {'shooting.header': '拍摄信息'} : {}),
+                        ...shootingInfo,
+                        ...(Object.keys(gpsInfo).length ? {'gps.header': '地理位置信息'} : {}),
+                        ...gpsInfo,
+                        ...(Object.keys(otherInfo).length ? {'other.header': '其他EXIF信息'} : {}),
+                        ...otherInfo
+                    };
+                    
+                    // 更新元数据
+                    originalMetadata = groupedMetadata;
+                }
+                
+                // 显示元数据表格
+                displayMetadata();
+            }
+            
+            // 显示元数据表格
+            function displayMetadata() {
+                // 清空表格
+                metadataBody.innerHTML = '';
+                
+                // 添加每行元数据
+                let currentGroup = '';
+                
+                for (const key in originalMetadata) {
+                    const value = originalMetadata[key];
+                    
+                    // 检查是否是组标题
+                    if (key.endsWith('.header')) {
+                        // 添加组标题行
+                        const headerRow = document.createElement('tr');
+                        headerRow.className = 'metadata-header';
+                        
+                        const headerCell = document.createElement('td');
+                        headerCell.textContent = value;
+                        headerCell.colSpan = 2;
+                        headerCell.style.backgroundColor = '#e8f0fe';
+                        headerCell.style.color = '#4285f4';
+                        headerCell.style.fontWeight = 'bold';
+                        headerRow.appendChild(headerCell);
+                        
+                        metadataBody.appendChild(headerRow);
+                        currentGroup = key.split('.')[0];
+                        continue;
+                    }
+                    
+                    const row = document.createElement('tr');
+                    
+                    // 给组内行添加类
+                    if (key.startsWith(currentGroup + '.')) {
+                        row.classList.add('metadata-group-item');
+                    }
+                    
+                    // 属性列 - 使用中文名称
+                    const keyCell = document.createElement('td');
+                    keyCell.textContent = getChinesePropertyName(key);
+                    row.appendChild(keyCell);
+                    
+                    // 值列
+                    const valueCell = document.createElement('td');
+                    valueCell.className = 'metadata-value';
+                    valueCell.textContent = value || '';
+                    row.appendChild(valueCell);
+                    
+                    metadataBody.appendChild(row);
+                }
+                
+                // 显示容器
+                metadataContainer.style.display = 'block';
+            }
+            
+            // 显示加载器
+            function showLoader(message = '处理中...') {
+                // 创建加载器元素（如果不存在）
+                let loader = document.getElementById('loader');
+                if (!loader) {
+                    loader = document.createElement('div');
+                    loader.id = 'loader';
+                    loader.className = 'loader';
+                    loader.innerHTML = `
+                        <div class="spinner"></div>
+                        <p id="loaderMessage">${message}</p>
+                    `;
+                    document.body.appendChild(loader);
+                } else {
+                    document.getElementById('loaderMessage').textContent = message;
+                    loader.style.display = 'flex';
+                }
+            }
+            
+            // 隐藏加载器
+            function hideLoader() {
+                const loader = document.getElementById('loader');
+                if (loader) {
+                    loader.style.display = 'none';
+                }
+            }
+            
+            // 辅助函数: 格式化字节大小
+            function formatBytes(bytes) {
+                if (bytes < 1024) {
+                    return bytes + ' B';
+                } else if (bytes < 1048576) {
+                    return (bytes / 1024).toFixed(2) + ' KB';
+                } else {
+                    return (bytes / 1048576).toFixed(2) + ' MB';
+                }
+            }
+            
+            // 辅助函数: 格式化EXIF日期
+            function formatExifDate(dateStr) {
+                // EXIF日期格式通常为 'YYYY:MM:DD HH:MM:SS'
+                if (!dateStr) return '';
+                
+                try {
+                    const parts = dateStr.split(' ');
+                    const datePart = parts[0].replace(/:/g, '-');
+                    const timePart = parts[1] || '00:00:00';
+                    
+                    return new Date(`${datePart}T${timePart}`).toLocaleString();
+                } catch (e) {
+                    return dateStr; // 如果解析失败，返回原始字符串
+                }
+            }
+            
+            // 辅助函数: 转换DMS(度分秒)到DD(十进制度)
+            function convertDMSToDD(dmsArray) {
+                if (!Array.isArray(dmsArray) || dmsArray.length < 3) {
+                    return 'Invalid coordinates';
+                }
+                
+                // 度 + 分/60 + 秒/3600
+                const degrees = dmsArray[0];
+                const minutes = dmsArray[1];
+                const seconds = dmsArray[2];
+                
+                let dd = degrees + minutes / 60 + seconds / 3600;
+                
+                // 如果还有方向信息
+                if (dmsArray.length > 3) {
+                    const direction = dmsArray[3];
+                    if (direction === 'S' || direction === 'W') {
+                        dd = -dd;
+                    }
+                }
+                
+                return dd.toFixed(6) + '°';
+            }
+            
+            // 初始化设置
+            metadataContainer.style.display = 'none';
+            previewContainer.style.display = 'none';
+        });
+    </script>
+</body>
+</html>

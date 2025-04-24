@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图像水印添加</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            background-color: #f9f9f9;
+        }
+        
+        header {
+            background-color: #4285f4;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        p {
+            margin: 5px 0 0;
+            font-size: 14px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        
+        .upload-container {
+            background-color: white;
+            border: 2px dashed #ccc;
+            border-radius: 5px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+        
+        .upload-container:hover {
+            border-color: #4285f4;
+        }
+        
+        .upload-container p {
+            margin-bottom: 15px;
+            color: #666;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .btn {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #3367d6;
+        }
+        
+        .reset-btn {
+            background-color: #f5f5f5;
+            color: #666;
+            border: 1px solid #ddd;
+        }
+        
+        .reset-btn:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #4285f4;
+            text-decoration: none;
+            text-align: center;
+            width: 100%;
+        }
+        
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        
+        .preview-container {
+            background-color: white;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .preview-image-container {
+            text-align: center;
+            margin-bottom: 20px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            padding: 10px;
+            position: relative;
+            overflow: hidden;
+            max-height: 500px;
+        }
+        
+        #previewCanvas {
+            max-width: 100%;
+            max-height: 500px;
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        .watermark-type {
+            margin-bottom: 15px;
+        }
+        
+        .watermark-type label {
+            margin-right: 15px;
+        }
+        
+        .highlight {
+            border-color: #4285f4;
+            background-color: #e8f0fe;
+        }
+        
+        .image-info {
+            margin-top: 10px;
+            color: #666;
+            font-size: 12px;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+        }
+        
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4285f4;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 2s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .tips-container {
+            background-color: #e8f0fe;
+            border-left: 4px solid #4285f4;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        
+        .tips-container h3 {
+            margin-top: 0;
+            margin-bottom: 8px;
+            color: #4285f4;
+            font-size: 16px;
+        }
+        
+        .tips-container ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #555;
+        }
+        
+        .tips-container li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="upload-container" id="dropArea">
+            <p>点击或拖拽图片到此处上传（支持JPG、PNG、GIF、WebP格式）</p>
+            <input type="file" id="fileInput" accept="image/*">
+            <button class="btn" id="uploadBtn">选择图片</button>
+        </div>
+        
+        <div class="tips-container">
+            <h3>使用提示</h3>
+            <ul>
+                <li>上传的图片在预览时会自动调整大小以便于查看，但下载时将保持原始分辨率。</li>
+                <li>文字水印可以调整位置、大小、颜色、透明度和旋转角度。</li>
+                <li>图片水印需要先上传水印图像，然后可以调整其位置、缩放、透明度和旋转角度。</li>
+                <li>图像处理可能需要几秒钟时间，请耐心等待。</li>
+            </ul>
+        </div>
+        
+        <div class="watermark-options">
+            <h2>水印设置</h2>
+            <div class="watermark-type">
+                <label>
+                    <input type="radio" name="watermarkType" value="text" checked> 文字水印
+                </label>
+                <label>
+                    <input type="radio" name="watermarkType" value="image"> 图片水印
+                </label>
+            </div>
+            
+            <div id="textWatermarkOptions">
+                <div class="form-group">
+                    <label for="watermarkText">水印文字</label>
+                    <input type="text" id="watermarkText" value="我的水印">
+                </div>
+                
+                <div class="form-group">
+                    <label for="textColor">文字颜色</label>
+                    <input type="color" id="textColor" value="#FFFFFF">
+                </div>
+                
+                <div class="form-group">
+                    <label for="textOpacity">不透明度</label>
+                    <input type="range" id="textOpacity" min="0" max="100" value="50">
+                </div>
+                
+                <div class="form-group">
+                    <label for="textSize">文字大小</label>
+                    <input type="range" id="textSize" min="10" max="100" value="30">
+                </div>
+                
+                <div class="form-group">
+                    <label for="textRotation">旋转角度</label>
+                    <input type="range" id="textRotation" min="0" max="360" value="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="textPosition">水印位置</label>
+                    <select id="textPosition">
+                        <option value="top-left">左上</option>
+                        <option value="top-right">右上</option>
+                        <option value="center" selected>居中</option>
+                        <option value="bottom-left">左下</option>
+                        <option value="bottom-right">右下</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="imageWatermarkOptions" style="display:none;">
+                <div class="form-group">
+                    <label for="watermarkImage">水印图片</label>
+                    <input type="file" id="watermarkImage" accept="image/*">
+                </div>
+                
+                <div class="form-group">
+                    <label for="imageOpacity">不透明度</label>
+                    <input type="range" id="imageOpacity" min="0" max="100" value="50">
+                </div>
+                
+                <div class="form-group">
+                    <label for="imageScale">缩放比例</label>
+                    <input type="range" id="imageScale" min="10" max="200" value="50">
+                </div>
+                
+                <div class="form-group">
+                    <label for="imageRotation">旋转角度</label>
+                    <input type="range" id="imageRotation" min="0" max="360" value="0">
+                </div>
+                
+                <div class="form-group">
+                    <label for="imagePosition">水印位置</label>
+                    <select id="imagePosition">
+                        <option value="top-left">左上</option>
+                        <option value="top-right">右上</option>
+                        <option value="center" selected>居中</option>
+                        <option value="bottom-left">左下</option>
+                        <option value="bottom-right">右下</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="btn" id="applyWatermarkBtn">应用水印</button>
+            <button class="btn reset-btn" id="resetBtn">重置</button>
+        </div>
+        
+        <div class="preview-container">
+            <h2>预览</h2>
+            <div class="preview-image-container">
+                <canvas id="previewCanvas"></canvas>
+                <div id="loader" class="loader"></div>
+            </div>
+            <button class="btn" id="downloadBtn">下载图片</button>
+        </div>
+    </div>
+    
+    <script>
+        // 这里将添加JavaScript代码来处理水印功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const fileInput = document.getElementById('fileInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const dropArea = document.getElementById('dropArea');
+            const previewCanvas = document.getElementById('previewCanvas');
+            const ctx = previewCanvas.getContext('2d');
+            const applyWatermarkBtn = document.getElementById('applyWatermarkBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            
+            // 水印设置
+            const watermarkTypeRadios = document.getElementsByName('watermarkType');
+            const textWatermarkOptions = document.getElementById('textWatermarkOptions');
+            const imageWatermarkOptions = document.getElementById('imageWatermarkOptions');
+            
+            // 文字水印选项
+            const watermarkText = document.getElementById('watermarkText');
+            const textColor = document.getElementById('textColor');
+            const textOpacity = document.getElementById('textOpacity');
+            const textSize = document.getElementById('textSize');
+            const textRotation = document.getElementById('textRotation');
+            const textPosition = document.getElementById('textPosition');
+            
+            // 图片水印选项
+            const watermarkImage = document.getElementById('watermarkImage');
+            const imageOpacity = document.getElementById('imageOpacity');
+            const imageScale = document.getElementById('imageScale');
+            const imageRotation = document.getElementById('imageRotation');
+            const imagePosition = document.getElementById('imagePosition');
+            
+            // 变量
+            let originalImage = null;
+            let watermarkImg = null;
+            
+            // 事件监听
+            uploadBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', handleFileSelect);
+            
+            // 拖放功能
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                dropArea.classList.add('highlight');
+            }
+            
+            function unhighlight() {
+                dropArea.classList.remove('highlight');
+            }
+            
+            dropArea.addEventListener('drop', handleDrop, false);
+            
+            // 水印类型切换
+            watermarkTypeRadios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    if (radio.value === 'text') {
+                        textWatermarkOptions.style.display = 'block';
+                        imageWatermarkOptions.style.display = 'none';
+                    } else {
+                        textWatermarkOptions.style.display = 'none';
+                        imageWatermarkOptions.style.display = 'block';
+                    }
+                });
+            });
+            
+            // 应用水印按钮
+            applyWatermarkBtn.addEventListener('click', applyWatermark);
+            
+            // 下载按钮
+            downloadBtn.addEventListener('click', downloadImage);
+            
+            // 重置按钮
+            resetBtn.addEventListener('click', resetCanvas);
+            
+            // 图片水印上传
+            watermarkImage.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        watermarkImg = new Image();
+                        watermarkImg.onload = function() {
+                            // 如果已有原图，重新应用水印
+                            if (originalImage) {
+                                applyWatermark();
+                            }
+                        };
+                        watermarkImg.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // 文件处理函数
+            function handleFileSelect(e) {
+                const files = e.target.files;
+                if (files.length > 0) {
+                    handleFiles(files);
+                }
+            }
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                
+                handleFiles(files);
+            }
+            
+            function handleFiles(files) {
+                if (files.length > 0) {
+                    const file = files[0];
+                    
+                    if (!file.type.match('image.*')) {
+                        alert('请上传图片文件!');
+                        return;
+                    }
+                    
+                    // 显示加载指示器
+                    document.getElementById('loader').style.display = 'block';
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        originalImage = new Image();
+                        originalImage.onload = function() {
+                            // 记录原始尺寸
+                            const originalWidth = originalImage.width;
+                            const originalHeight = originalImage.height;
+                            
+                            // 计算缩放比例以适应预览区域
+                            const maxWidth = 800; // 最大预览宽度
+                            const maxHeight = 500; // 最大预览高度
+                            
+                            let displayWidth = originalWidth;
+                            let displayHeight = originalHeight;
+                            
+                            // 计算合适的缩放尺寸，保持宽高比
+                            if (displayWidth > maxWidth) {
+                                const ratio = maxWidth / displayWidth;
+                                displayWidth = maxWidth;
+                                displayHeight = Math.floor(originalHeight * ratio);
+                            }
+                            
+                            if (displayHeight > maxHeight) {
+                                const ratio = maxHeight / displayHeight;
+                                displayHeight = maxHeight;
+                                displayWidth = Math.floor(displayWidth * ratio);
+                            }
+                            
+                            // 设置画布大小为显示尺寸
+                            previewCanvas.width = displayWidth;
+                            previewCanvas.height = displayHeight;
+                            
+                            // 清除画布并绘制图像
+                            ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                            ctx.drawImage(originalImage, 0, 0, displayWidth, displayHeight);
+                            
+                            // 显示预览区域和图像信息
+                            document.querySelector('.preview-container').style.display = 'block';
+                            
+                            // 添加图像信息显示
+                            updateImageInfo(originalWidth, originalHeight, displayWidth, displayHeight, file.size);
+                            
+                            // 隐藏加载指示器
+                            document.getElementById('loader').style.display = 'none';
+                        };
+                        originalImage.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+            
+            // 添加显示图像信息的函数
+            function updateImageInfo(originalWidth, originalHeight, displayWidth, displayHeight, fileSize) {
+                // 检查是否存在图像信息元素，如果不存在则创建
+                let imageInfo = document.querySelector('.image-info');
+                if (!imageInfo) {
+                    imageInfo = document.createElement('div');
+                    imageInfo.className = 'image-info';
+                    document.querySelector('.preview-image-container').appendChild(imageInfo);
+                }
+                
+                // 格式化文件大小
+                let formattedSize = '';
+                if (fileSize < 1024) {
+                    formattedSize = fileSize + ' B';
+                } else if (fileSize < 1048576) {
+                    formattedSize = (fileSize / 1024).toFixed(2) + ' KB';
+                } else {
+                    formattedSize = (fileSize / 1048576).toFixed(2) + ' MB';
+                }
+                
+                // 更新信息显示
+                imageInfo.innerHTML = `
+                    原始尺寸: ${originalWidth} × ${originalHeight} 像素 | 
+                    显示尺寸: ${displayWidth} × ${displayHeight} 像素 | 
+                    文件大小: ${formattedSize} | 
+                    <span style="color:#4285f4">预览图仅用于显示，下载时将保持原始分辨率</span>
+                `;
+            }
+            
+            // 应用水印函数
+            function applyWatermark() {
+                if (!originalImage) {
+                    alert('请先上传图片!');
+                    return;
+                }
+                
+                // 重置画布
+                ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                ctx.drawImage(originalImage, 0, 0, previewCanvas.width, previewCanvas.height);
+                
+                // 获取选中的水印类型
+                let watermarkType = 'text';
+                watermarkTypeRadios.forEach(radio => {
+                    if (radio.checked) watermarkType = radio.value;
+                });
+                
+                if (watermarkType === 'text') {
+                    // 应用文字水印
+                    applyTextWatermark();
+                } else {
+                    // 应用图片水印
+                    applyImageWatermark();
+                }
+            }
+            
+            // 应用文字水印
+            function applyTextWatermark() {
+                const text = watermarkText.value || '我的水印';
+                const color = textColor.value;
+                const opacity = textOpacity.value / 100;
+                const size = textSize.value;
+                const rotation = textRotation.value * Math.PI / 180; // 转换为弧度
+                const position = textPosition.value;
+                
+                // 保存当前状态
+                ctx.save();
+                
+                // 设置透明度
+                ctx.globalAlpha = opacity;
+                
+                // 设置字体
+                ctx.font = `${size}px Arial`;
+                ctx.fillStyle = color;
+                
+                // 测量文本宽度
+                const textWidth = ctx.measureText(text).width;
+                
+                // 计算位置
+                let x, y;
+                switch (position) {
+                    case 'top-left':
+                        x = 20;
+                        y = 20 + parseInt(size);
+                        break;
+                    case 'top-right':
+                        x = previewCanvas.width - textWidth - 20;
+                        y = 20 + parseInt(size);
+                        break;
+                    case 'center':
+                        x = (previewCanvas.width - textWidth) / 2;
+                        y = previewCanvas.height / 2;
+                        break;
+                    case 'bottom-left':
+                        x = 20;
+                        y = previewCanvas.height - 20;
+                        break;
+                    case 'bottom-right':
+                        x = previewCanvas.width - textWidth - 20;
+                        y = previewCanvas.height - 20;
+                        break;
+                    default:
+                        x = (previewCanvas.width - textWidth) / 2;
+                        y = previewCanvas.height / 2;
+                }
+                
+                // 旋转
+                if (rotation !== 0) {
+                    // 移动到旋转中心点
+                    ctx.translate(x + textWidth / 2, y - size / 2);
+                    ctx.rotate(rotation);
+                    // 绘制文本（考虑旋转后的偏移）
+                    ctx.fillText(text, -textWidth / 2, size / 2);
+                } else {
+                    // 不旋转直接绘制
+                    ctx.fillText(text, x, y);
+                }
+                
+                // 恢复状态
+                ctx.restore();
+            }
+            
+            // 应用图片水印
+            function applyImageWatermark() {
+                if (!watermarkImg) {
+                    alert('请先上传水印图片!');
+                    return;
+                }
+                
+                const opacity = imageOpacity.value / 100;
+                const scale = imageScale.value / 100;
+                const rotation = imageRotation.value * Math.PI / 180; // 转换为弧度
+                const position = imagePosition.value;
+                
+                // 计算缩放后的尺寸
+                const watermarkWidth = watermarkImg.width * scale;
+                const watermarkHeight = watermarkImg.height * scale;
+                
+                // 计算位置
+                let x, y;
+                switch (position) {
+                    case 'top-left':
+                        x = 20;
+                        y = 20;
+                        break;
+                    case 'top-right':
+                        x = previewCanvas.width - watermarkWidth - 20;
+                        y = 20;
+                        break;
+                    case 'center':
+                        x = (previewCanvas.width - watermarkWidth) / 2;
+                        y = (previewCanvas.height - watermarkHeight) / 2;
+                        break;
+                    case 'bottom-left':
+                        x = 20;
+                        y = previewCanvas.height - watermarkHeight - 20;
+                        break;
+                    case 'bottom-right':
+                        x = previewCanvas.width - watermarkWidth - 20;
+                        y = previewCanvas.height - watermarkHeight - 20;
+                        break;
+                    default:
+                        x = (previewCanvas.width - watermarkWidth) / 2;
+                        y = (previewCanvas.height - watermarkHeight) / 2;
+                }
+                
+                // 保存当前状态
+                ctx.save();
+                
+                // 设置透明度
+                ctx.globalAlpha = opacity;
+                
+                // 旋转
+                if (rotation !== 0) {
+                    // 移动到旋转中心点
+                    ctx.translate(x + watermarkWidth / 2, y + watermarkHeight / 2);
+                    ctx.rotate(rotation);
+                    // 绘制图片（考虑旋转后的偏移）
+                    ctx.drawImage(watermarkImg, -watermarkWidth / 2, -watermarkHeight / 2, watermarkWidth, watermarkHeight);
+                } else {
+                    // 不旋转直接绘制
+                    ctx.drawImage(watermarkImg, x, y, watermarkWidth, watermarkHeight);
+                }
+                
+                // 恢复状态
+                ctx.restore();
+            }
+            
+            // 下载图片函数
+            function downloadImage() {
+                if (!originalImage) {
+                    alert('请先上传并处理图片!');
+                    return;
+                }
+                
+                // 显示加载指示器
+                document.getElementById('loader').style.display = 'block';
+                
+                // 使用setTimeout给UI线程一个更新显示加载器的机会
+                setTimeout(() => {
+                    // 创建临时画布，使用原始尺寸
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = originalImage.width;
+                    tempCanvas.height = originalImage.height;
+                    const tempCtx = tempCanvas.getContext('2d');
+                    
+                    // 在临时画布上绘制原始图像
+                    tempCtx.drawImage(originalImage, 0, 0, originalImage.width, originalImage.height);
+                    
+                    // 获取选中的水印类型
+                    let watermarkType = 'text';
+                    watermarkTypeRadios.forEach(radio => {
+                        if (radio.checked) watermarkType = radio.value;
+                    });
+                    
+                    // 根据缩放比例调整水印
+                    const scaleX = originalImage.width / previewCanvas.width;
+                    const scaleY = originalImage.height / previewCanvas.height;
+                    
+                    if (watermarkType === 'text') {
+                        // 应用文字水印到临时画布
+                        const text = watermarkText.value || '我的水印';
+                        const color = textColor.value;
+                        const opacity = textOpacity.value / 100;
+                        const size = parseInt(textSize.value) * scaleX; // 调整文字大小
+                        const rotation = textRotation.value * Math.PI / 180;
+                        const position = textPosition.value;
+                        
+                        tempCtx.save();
+                        tempCtx.globalAlpha = opacity;
+                        tempCtx.font = `${size}px Arial`;
+                        tempCtx.fillStyle = color;
+                        
+                        const textWidth = tempCtx.measureText(text).width;
+                        
+                        let x, y;
+                        switch (position) {
+                            case 'top-left':
+                                x = 20 * scaleX;
+                                y = (20 + parseInt(textSize.value)) * scaleY;
+                                break;
+                            case 'top-right':
+                                x = originalImage.width - textWidth - 20 * scaleX;
+                                y = (20 + parseInt(textSize.value)) * scaleY;
+                                break;
+                            case 'center':
+                                x = (originalImage.width - textWidth) / 2;
+                                y = originalImage.height / 2;
+                                break;
+                            case 'bottom-left':
+                                x = 20 * scaleX;
+                                y = originalImage.height - 20 * scaleY;
+                                break;
+                            case 'bottom-right':
+                                x = originalImage.width - textWidth - 20 * scaleX;
+                                y = originalImage.height - 20 * scaleY;
+                                break;
+                            default:
+                                x = (originalImage.width - textWidth) / 2;
+                                y = originalImage.height / 2;
+                        }
+                        
+                        if (rotation !== 0) {
+                            tempCtx.translate(x + textWidth / 2, y - size / 2);
+                            tempCtx.rotate(rotation);
+                            tempCtx.fillText(text, -textWidth / 2, size / 2);
+                        } else {
+                            tempCtx.fillText(text, x, y);
+                        }
+                        
+                        tempCtx.restore();
+                    } else if (watermarkImg) {
+                        // 应用图片水印到临时画布
+                        const opacity = imageOpacity.value / 100;
+                        const scale = imageScale.value / 100;
+                        const rotation = imageRotation.value * Math.PI / 180;
+                        const position = imagePosition.value;
+                        
+                        const watermarkWidth = watermarkImg.width * scale * scaleX;
+                        const watermarkHeight = watermarkImg.height * scale * scaleY;
+                        
+                        let x, y;
+                        switch (position) {
+                            case 'top-left':
+                                x = 20 * scaleX;
+                                y = 20 * scaleY;
+                                break;
+                            case 'top-right':
+                                x = originalImage.width - watermarkWidth - 20 * scaleX;
+                                y = 20 * scaleY;
+                                break;
+                            case 'center':
+                                x = (originalImage.width - watermarkWidth) / 2;
+                                y = (originalImage.height - watermarkHeight) / 2;
+                                break;
+                            case 'bottom-left':
+                                x = 20 * scaleX;
+                                y = originalImage.height - watermarkHeight - 20 * scaleY;
+                                break;
+                            case 'bottom-right':
+                                x = originalImage.width - watermarkWidth - 20 * scaleX;
+                                y = originalImage.height - watermarkHeight - 20 * scaleY;
+                                break;
+                            default:
+                                x = (originalImage.width - watermarkWidth) / 2;
+                                y = (originalImage.height - watermarkHeight) / 2;
+                        }
+                        
+                        tempCtx.save();
+                        tempCtx.globalAlpha = opacity;
+                        
+                        if (rotation !== 0) {
+                            tempCtx.translate(x + watermarkWidth / 2, y + watermarkHeight / 2);
+                            tempCtx.rotate(rotation);
+                            tempCtx.drawImage(watermarkImg, -watermarkWidth / 2, -watermarkHeight / 2, watermarkWidth, watermarkHeight);
+                        } else {
+                            tempCtx.drawImage(watermarkImg, x, y, watermarkWidth, watermarkHeight);
+                        }
+                        
+                        tempCtx.restore();
+                    }
+                    
+                    // 创建下载链接，使用临时画布
+                    const link = document.createElement('a');
+                    link.download = 'watermarked-image.png';
+                    link.href = tempCanvas.toDataURL('image/png');
+                    
+                    // 隐藏加载指示器并触发下载
+                    document.getElementById('loader').style.display = 'none';
+                    link.click();
+                }, 50);
+            }
+            
+            // 重置画布函数
+            function resetCanvas() {
+                if (originalImage) {
+                    // 清除画布
+                    ctx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+                    
+                    // 使用正确的尺寸重新绘制原始图像（保持与上传时相同的缩放）
+                    ctx.drawImage(originalImage, 0, 0, previewCanvas.width, previewCanvas.height);
+                }
+            }
+            
+            // 初始化设置
+            document.querySelector('.preview-container').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
